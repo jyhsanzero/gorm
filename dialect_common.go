@@ -185,3 +185,44 @@ func (commonDialect) NormalizeIndexAndColumn(indexName, columnName string) (stri
 func IsByteArrayOrSlice(value reflect.Value) bool {
 	return (value.Kind() == reflect.Array || value.Kind() == reflect.Slice) && value.Type().Elem() == reflect.TypeOf(uint8(0))
 }
+
+/*For firebirdsql*/
+func (s commonDialect) CreateAutoIncrementTrigger(tableName string, column string) {
+	//Firebirdsql doesn't support the key of "AUTO_INCREMENT",if you want create an auto increment column,
+	//you should create a trigger for this column.
+	autoIncrementSql := "CREATE TRIGGER %v FOR %v ACTIVE BEFORE INSERT POSITION 0 AS BEGIN IF (NEW.%v IS NULL) THEN NEW.%v = GEN_ID(%v,1); END"
+	triggerName := s.BuildKeyName(tableName, column, "BI")
+	generatorName := s.BuildKeyName("GEN", tableName, column)
+	if s.HasGeneratorName(generatorName) {
+		return
+	}
+	s.CreateGeneratorName(generatorName)
+	s.db.Exec(fmt.Sprintf(autoIncrementSql, triggerName, tableName, column, column, generatorName))
+}
+
+func (s commonDialect) RemoveTrigger(tableName string, column string) {
+	triggerName := s.BuildKeyName(tableName, column, "BI")
+	generatorName := s.BuildKeyName("GEN", tableName, column)
+	s.RemoveGeneratorName(generatorName)
+	s.db.Exec(fmt.Sprintf("DROP TRIGGER %v", triggerName))
+}
+
+func (s commonDialect) HasGeneratorName(generatorName string) bool {
+	//Check the generatorName had been defined or not.
+	var count int
+	//generatorName should be capitalized
+	generatorName = strings.ToUpper(generatorName)
+	s.db.QueryRow("SELECT COUNT(*) FROM RDB$GENERATORS WHERE RDB$GENERATOR_NAME=?", generatorName).Scan(&count)
+	return count > 0
+}
+
+func (s commonDialect) CreateGeneratorName(generatorName string) {
+	//Before you create a trigger,you should insure that the generator had been defined.
+	if !s.HasGeneratorName(generatorName) {
+		s.db.Exec(fmt.Sprintf("CREATE GENERATOR %v;", generatorName))
+	}
+}
+
+func (s commonDialect) RemoveGeneratorName(generatorName string) {
+	s.db.Exec(fmt.Sprintf("DROP GENERATOR %v;", generatorName))
+}

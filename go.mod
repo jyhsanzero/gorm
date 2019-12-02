@@ -10,4 +10,7 @@ require (
 	github.com/jinzhu/now v1.0.1
 	github.com/lib/pq v1.1.1
 	github.com/mattn/go-sqlite3 v1.11.0
+	github.com/nakagami/firebirdsql v0.0.0-20191006235538-bba3f542e616
+	github.com/remyoudompheng/bigfft v0.0.0-20190728182440-6a916e37a237 // indirect
+	github.com/shopspring/decimal v0.0.0-20191009025716-f1972eb1d1f5 // indirect
 )

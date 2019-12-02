@@ -1188,6 +1188,13 @@ func (scope *Scope) createTable() *Scope {
 	}
 
 	scope.Raw(fmt.Sprintf("CREATE TABLE %v (%v %v)%s", scope.QuotedTableName(), strings.Join(tags, ","), primaryKeyStr, scope.getTableOptions())).Exec()
+	/*For firebirdsql*/
+	var firebirdsql firebirdsql
+	if scope.Dialect().GetName() == firebirdsql.GetName() {
+		for i := 0; i < len(primaryKeys); i++ {
+			scope.Dialect().CreateAutoIncrementTrigger(scope.QuotedTableName(), primaryKeys[i])
+		}
+	}
 
 	scope.autoIndex()
 	return scope
@@ -1203,7 +1210,14 @@ func (scope *Scope) modifyColumn(column string, typ string) {
 }
 
 func (scope *Scope) dropColumn(column string) {
-	scope.Raw(fmt.Sprintf("ALTER TABLE %v DROP COLUMN %v", scope.QuotedTableName(), scope.Quote(column))).Exec()
+	var firebirdsql firebirdsql
+	if scope.Dialect().GetName() == firebirdsql.GetName() {
+		/*For firebirdsql*/
+		scope.Raw(fmt.Sprintf("ALTER TABLE %v DROP %v", scope.QuotedTableName(), scope.Quote(column))).Exec()
+	} else {
+		scope.Raw(fmt.Sprintf("ALTER TABLE %v DROP COLUMN %v", scope.QuotedTableName(), scope.Quote(column))).Exec()
+	}
+
 }
 
 func (scope *Scope) addIndex(unique bool, indexName string, column ...string) {
@@ -1232,7 +1246,8 @@ func (scope *Scope) addForeignKey(field string, dest string, onDelete string, on
 		return
 	}
 	var query = `ALTER TABLE %s ADD CONSTRAINT %s FOREIGN KEY (%s) REFERENCES %s ON DELETE %s ON UPDATE %s;`
-	scope.Raw(fmt.Sprintf(query, scope.QuotedTableName(), scope.quoteIfPossible(keyName), scope.quoteIfPossible(field), dest, onDelete, onUpdate)).Exec()
+	result := fmt.Sprintf(query, scope.QuotedTableName(), scope.quoteIfPossible(keyName), scope.quoteIfPossible(field), dest, onDelete, onUpdate)
+	scope.Raw(result).Exec()
 }
 
 func (scope *Scope) removeForeignKey(field string, dest string) {
