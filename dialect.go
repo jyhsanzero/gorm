@@ -55,6 +55,17 @@ type Dialect interface {
 
 	// CurrentDatabase return current database name
 	CurrentDatabase() string
+
+	/*For firebirdsql*/
+	CreateAutoIncrementTrigger(tableName string, column string)
+
+	RemoveTrigger(tableName string, column string)
+
+	HasGeneratorName(generatorName string) bool
+
+	CreateGeneratorName(generatorName string)
+
+	RemoveGeneratorName(generatorName string)
 }
 
 var dialectsMap = map[string]Dialect{}

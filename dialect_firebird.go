@@ -211,7 +211,7 @@ func (firebirdsql) DefaultValueStr() string {
 }
 
 func (s firebirdsql) BuildKeyName(kind, tableName string, fields ...string) string {
-	keyName := fmt.Sprintf("%s_%s", kind, strings.Join(fields, "_"))
+	keyName := fmt.Sprintf("%s_%s_%s", kind, tableName, strings.Join(fields, "_"))
 	keyName = keyNameRegex.ReplaceAllString(keyName, "_")
 	keyName = strings.ToUpper(keyName)
 	return keyName
